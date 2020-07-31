@@ -138,6 +138,10 @@ ioctl_iow_nr!(KVM_SET_CPUID2, KVMIO, 0x90, kvm_cpuid2);
 /* Available with KVM_CAP_EXT_CPUID */
 #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
 ioctl_iowr_nr!(KVM_GET_CPUID2, KVMIO, 0x91, kvm_cpuid2);
+/* Available with KVM_CAP_HYPERV_CPUID */
+#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+ioctl_iowr_nr!(KVM_GET_SUPPORTED_HV_CPUID, KVMIO, 0xc1, kvm_cpuid2);
+
 /* Available with KVM_CAP_MP_STATE */
 #[cfg(any(
     target_arch = "x86",

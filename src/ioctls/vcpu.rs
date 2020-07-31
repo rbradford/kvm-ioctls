@@ -396,6 +396,46 @@ impl VcpuFd {
         Ok(cpuid)
     }
 
+    /// X86 specific call to retrieve the supported HV CPUID registers.
+    ///
+    /// It requires knowledge of how many `kvm_cpuid_entry2` entries there are to get.
+    /// See the documentation for `KVM_GET_CPUID2` in the
+    /// [KVM API doc](https://www.kernel.org/doc/Documentation/virtual/kvm/api.txt).
+    ///
+    /// # Arguments
+    ///
+    /// * `num_entries` - Number of CPUID entries to be read.
+    ///
+    /// # Example
+    ///
+    ///  ```rust
+    /// # extern crate kvm_ioctls;
+    /// # extern crate kvm_bindings;
+    /// # use kvm_bindings::KVM_MAX_CPUID_ENTRIES;
+    /// # use kvm_ioctls::Kvm;
+    /// let kvm = Kvm::new().unwrap();
+    /// let vm = kvm.create_vm().unwrap();
+    /// let vcpu = vm.create_vcpu(0).unwrap();
+    /// let cpuid = vcpu.get_supported_hv_cpuid(KVM_MAX_CPUID_ENTRIES).unwrap();
+    /// ```
+    ///
+    #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+    pub fn get_supported_hv_cpuid(&self, num_entries: usize) -> Result<CpuId> {
+        let mut cpuid = CpuId::new(num_entries);
+        let ret = unsafe {
+            // Here we trust the kernel not to read past the end of the kvm_cpuid2 struct.
+            ioctl_with_mut_ptr(
+                self,
+                KVM_GET_SUPPORTED_HV_CPUID(),
+                cpuid.as_mut_fam_struct_ptr(),
+            )
+        };
+        if ret != 0 {
+            return Err(errno::Error::last());
+        }
+        Ok(cpuid)
+    }
+
     /// Returns the state of the LAPIC (Local Advanced Programmable Interrupt Controller).
     ///
     /// The state is returned in a `kvm_lapic_state` structure as defined in the
