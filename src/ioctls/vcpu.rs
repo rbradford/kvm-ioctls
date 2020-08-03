@@ -436,6 +436,42 @@ impl VcpuFd {
         Ok(cpuid)
     }
 
+    ///
+    /// See the documentation for `KVM_ENABLE_CAP`.
+    ///
+    /// # Arguments
+    ///
+    /// * kvm_enable_cap - KVM capability structure. For details check the `kvm_enable_cap`
+    ///                    structure in the
+    ///                    [KVM API doc](https://www.kernel.org/doc/Documentation/virtual/kvm/api.txt).
+    ///    ///
+    /// # Example
+    ///
+    ///  ```rust
+    /// # extern crate kvm_ioctls;
+    /// # extern crate kvm_bindings;
+    /// # use kvm_bindings::KVM_MAX_CPUID_ENTRIES;
+    /// # use kvm_ioctls::Kvm;
+    /// let kvm = Kvm::new().unwrap();
+    /// let mut kvm_cpuid = kvm.get_supported_cpuid(KVM_MAX_CPUID_ENTRIES).unwrap();
+    /// let vm = kvm.create_vm().unwrap();
+    /// let vcpu = vm.create_vcpu(0).unwrap();
+    /// let mut cap: kvm_enable_cap = Default::default();
+    /// cap.cap = KVM_CAP_HYPERV_SYNIC;
+    /// vcpu.enable_cap(&cap).unwrap();
+    /// ```
+    ///
+    pub fn enable_cap(&self, cap: &kvm_enable_cap) -> Result<()> {
+        // The ioctl is safe because we allocated the struct and we know the
+        // kernel will write exactly the size of the struct.
+        let ret = unsafe { ioctl_with_ref(self, KVM_ENABLE_CAP(), cap) };
+        if ret == 0 {
+            Ok(())
+        } else {
+            Err(errno::Error::last())
+        }
+    }
+
     /// Returns the state of the LAPIC (Local Advanced Programmable Interrupt Controller).
     ///
     /// The state is returned in a `kvm_lapic_state` structure as defined in the
